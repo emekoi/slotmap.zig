@@ -2,7 +2,7 @@ const Builder = @import("std").build.Builder;
 
 pub fn build(b: *Builder) void {
     const mode = b.standardReleaseOptions();
-    const lib = b.addStaticLibrary("slotmap-zig", "src/index.zig");
+    const lib = b.addStaticLibrary("slotmap", "src/index.zig");
     lib.setBuildMode(mode);
 
     var main_tests = b.addTest("src/index.zig");
