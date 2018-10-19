@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub const Key = struct {
+pub const Key = struct.{
     const Self = @This();
 
     index: u32,
@@ -12,7 +12,7 @@ pub const Key = struct {
 };
 
 fn Slot(comptime T: type) type {
-    return struct {
+    return struct.{
         const Self = @This();
 
         version: u32,
@@ -20,7 +20,7 @@ fn Slot(comptime T: type) type {
         value: T,
 
         fn new(version: u32, next_free: u32, value: T) Self {
-            return Self {
+            return Self.{
                 .version = version,
                 .next_free = next_free,
                 .value = value
@@ -34,38 +34,44 @@ fn Slot(comptime T: type) type {
 }
 
 pub fn SlotMap(comptime T: type) type {
-    return struct {
+    return struct.{
         const Self = @This();
         const SlotType = Slot(T);
 
-        pub const Error = error {
+        pub const Error = error.{
             OverflowError,
             InvalidKey,
         };
 
-        pub const Iterator = struct {
+        pub const Iterator = struct.{
             map: *const Self,
             index: usize,
             
             pub fn next_key(self: *Iterator) ?Key {
-                if (self.map.len == 0 or self.index > self.map.len) return null;
+                if (self.map.len == 0 or self.index > self.map.len) {
+                    self.reset();
+                    return null;
+                }
                 while (!self.map.slots.at(self.index).occupied()) : (self.index += 1) {}
                 self.index += 1;
 
-                return Key {
+                return Key.{
                     .index = @intCast(u32, self.index - 1),
                     .version = self.map.slots.at(self.index - 1).version,
                 };
             }
 
             pub fn next_value(self: *Iterator) ?T {
-                if (self.map.len == 0 or self.index > self.map.len) return null;
+                if (self.map.len == 0 or self.index > self.map.len) {
+                    self.reset();
+                    return null;
+                }
                 while (!self.map.slots.at(self.index).occupied()) : (self.index += 1) {}
                 self.index += 1;
                 return self.map.slots.at(self.index - 1).value;
             }
 
-            pub fn reset(self: *Iterator) void {
+            fn reset(self: *Iterator) void {
                 self.index = 0;
             }
         };
@@ -75,7 +81,7 @@ pub fn SlotMap(comptime T: type) type {
         len: usize,
 
         pub fn init(allocator: *std.mem.Allocator, size: u32) !Self {
-            var result = Self {
+            var result = Self.{
                 .slots = std.ArrayList(SlotType).init(allocator),
                 .free_head = 0,
                 .len = 0,
@@ -122,7 +128,7 @@ pub fn SlotMap(comptime T: type) type {
             if (idx < self.slots.count()) {
                 const slots = self.slots.toSlice();
                 const occupied_version = slots[idx].version | 1;
-                const result = Key {
+                const result = Key.{
                     .index = @intCast(u32, idx),
                     .version = occupied_version
                 };
@@ -135,7 +141,7 @@ pub fn SlotMap(comptime T: type) type {
                 return result;
             } else {
                 
-                const result = Key {
+                const result = Key.{
                     .index = @intCast(u32, idx),
                     .version = 1
                 };
@@ -150,7 +156,8 @@ pub fn SlotMap(comptime T: type) type {
 
         // TODO: find out how to do this correctly
         fn reserve(self: *Self) !Key {
-            return try self.insert(undefined);
+            const default: T = undefined;
+            return try self.insert(default);
         }
 
         fn remove_from_slot(self: *Self, idx: usize) T {
@@ -185,7 +192,7 @@ pub fn SlotMap(comptime T: type) type {
 
             while (idx < len) : (idx += 1) {
                 const slot = self.slots.at(idx);
-                const key = Key { .index = idx, .version = slot.version };
+                const key = Key.{ .index = idx, .version = slot.version };
                 if (slot.occupied and !filter(key, value)) {
                     _ = self.remove_from_slot(idx);
                 }
@@ -228,7 +235,7 @@ pub fn SlotMap(comptime T: type) type {
         }
 
         pub fn iterator(self: *const Self) Iterator {
-            return Iterator {
+            return Iterator.{
                 .map = self,
                 .index = 0,
             };
@@ -243,7 +250,7 @@ test "slotmap" {
     const assert = debug.assert;
     const assertError = debug.assertError;
 
-    const data = [][]const u8{
+    const data = [][]const u8.{
         "foo",
         "bar",
         "cat",
@@ -251,7 +258,7 @@ test "slotmap" {
     };
 
     var map = try SlotMap([]const u8).init(std.debug.global_allocator, 3);
-    var keys = []Key{ Key{ .index = 0, .version = 0} } ** 3;
+    var keys = []Key.{ Key.{ .index = 0, .version = 0} } ** 3;
     var iter = map.iterator();
     var idx: usize = 0;
 
@@ -275,7 +282,6 @@ test "slotmap" {
         assert(mem.eql(u8, value, data[idx + 1]));
     }
 
-    iter.reset();
     idx = 0;
 
     while (iter.next_key()) |key| : (idx += 1) {
@@ -283,7 +289,6 @@ test "slotmap" {
     }
 
     map.clear();
-    iter.reset();
 
     std.debug.warn("\n");
     
