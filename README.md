@@ -1,4 +1,4 @@
-# *slotmap-zig*
+# *slotmap.zig*
 
 a slotmap for zig
 
