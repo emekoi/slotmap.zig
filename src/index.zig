@@ -119,7 +119,7 @@ pub fn SlotMap(comptime T: type) type {
         pub fn insert(self: *Self, value: T) !Key {
             const new_len = self.len + 1;
 
-            if (new_len == @maxValue(u32)) {
+            if (new_len == std.math.maxInt(u32)) {
                 return error.OverflowError;
             }
             
